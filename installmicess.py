@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # made for you gaess yang gak suka ribet" ;)
 # betmen0x0
+
 import os
 import sys
 import subprocess
@@ -18,8 +19,6 @@ console = Console()
 class InstallerAlatKeamanan:
     def __init__(self, daftar_alat: Dict[str, str]):
         self.daftar_alat = daftar_alat
-        # Create a lowercase version of tool names for case-insensitive matching
-        self.daftar_alat_lowercase = {k.lower(): k for k in daftar_alat.keys()}
         self.alat_berhasil: List[str] = []
         self.alat_gagal: List[str] = []
         self.jenis_os = self._deteksi_os()
@@ -35,11 +34,7 @@ class InstallerAlatKeamanan:
         go_path = os.environ.get('GOPATH', str(Path.home() / 'go'))
         bin_path = os.path.join(go_path, 'bin')
         os.makedirs(bin_path, exist_ok=True)
-        
-        # OS-specific PATH separator
-        path_separator = ';' if self.jenis_os == 'windows' else ':'
-        os.environ['PATH'] = f"{bin_path}{path_separator}{os.environ.get('PATH', '')}"
-        
+        os.environ['PATH'] = f"{bin_path}:{os.environ.get('PATH', '')}"
         return go_path
 
     def _check_installed(self, tool: str) -> bool:
@@ -58,14 +53,21 @@ class InstallerAlatKeamanan:
                 Panel.fit(
                     f"Dependensi tidak tersedia: {', '.join(tidak_tersedia)}\n"
                     f"Instal dependensi dengan:\n"
-                    f"- Linux: sudo apt install {' '.join(tidak_tersedia)} libpcap-dev\n"
-                    f"- MacOS: brew install {' '.join(tidak_tersedia)} libpcap\n"
-                    f"- Windows: Gunakan Chocolatey atau instalasi manual",
+                    f"- Linux: sudo apt install {' '.join(tidak_tersedia)}\n"
+                    f"- MacOS: brew install {' '.join(tidak_tersedia)}",
                     title="[bold red]Kesalahan Dependensi[/bold red]",
                     border_style="red"
                 )
             )
             return False
+
+        # Tambahan untuk Naabu: Instal libpcap
+        if self.jenis_os == 'linux':
+            try:
+                subprocess.run("apt-get install -y libpcap-dev", shell=True, check=True)
+            except subprocess.CalledProcessError:
+                console.print("[yellow]Peringatan: Gagal menginstal libpcap-dev. Naabu mungkin gagal.[/yellow]")
+
         return True
 
     def jalankan_perintah(self, perintah: str, alat: str) -> bool:
@@ -74,14 +76,13 @@ class InstallerAlatKeamanan:
                 console.print(f"[yellow][SKIP][/yellow] {alat} sudah terinstall")
                 return True
 
-            # Handle URLs directly
             if perintah.startswith('open '):
                 console.print(f"[yellow][MANUAL][/yellow] Silakan kunjungi: {perintah.split('open ')[1]}")
                 return True
 
+            # Pisahkan perintah jika ada multiple commands (&&)
             commands = perintah.split('&&')
-            current_dir = os.getcwd()
-
+            current_dir = os.getcwd()  # Simpan direktori saat ini
             for cmd in commands:
                 cmd = cmd.strip()
                 if not cmd:
@@ -90,82 +91,38 @@ class InstallerAlatKeamanan:
                 # Tangani cloning repositori hacks sekali saja
                 if 'git clone https://github.com/tomnomnom/hacks.git' in cmd and not self.hacks_cloned:
                     if os.path.exists('hacks'):
-                        try:
-                            shutil.rmtree('hacks')
-                        except PermissionError:
-                            console.print(f"[yellow][WARNING][/yellow] Tidak dapat menghapus direktori hacks yang ada. Pastikan tidak sedang digunakan.")
+                        shutil.rmtree('hacks')  # Hapus jika sudah ada
                     subprocess.run('git clone https://github.com/tomnomnom/hacks.git', shell=True, check=True)
                     self.hacks_cloned = True
-                    continue
                 elif 'git clone https://github.com/tomnomnom/hacks.git' in cmd:
-                    # Skip if already cloned
-                    continue
+                    continue  # Skip cloning jika sudah dilakukan
 
                 # Tambahan untuk Go module
-                if 'go build' in cmd and alat in ['Cariddi', 'Unew', 'Urldedupe', 'x8', 'xray', 'CF-check', 'Jsubfinder']:
-                    try:
-                        module_dir = cmd.split('cd ')[-1].split(' &&')[0].strip() if 'cd ' in cmd else '.'
-                        init_cmd = f"cd {module_dir} && go mod init {alat.lower()} && go mod tidy"
-                        subprocess.run(init_cmd, shell=True, check=True)
-                    except subprocess.CalledProcessError:
-                        console.print(f"[yellow][WARNING][/yellow] Gagal inisialisasi Go module untuk {alat}, mencoba melanjutkan...")
+                if 'go build' in cmd and alat in ['Cariddi', 'Unew', 'Urldedupe', 'x8', 'xray']:
+                    module_dir = cmd.split('&&')[-1].split('mv')[0].split('cd')[-1].strip()
+                    subprocess.run(f"cd {module_dir} && go mod init {alat.lower()} && go mod tidy", shell=True, check=True)
 
                 # Tangani GF secara khusus
                 if alat == 'Gf':
-                    try:
-                        # Remove existing installation if needed
-                        if os.path.exists('gf'):
-                            shutil.rmtree('gf')
-                        
+                    if 'go install' in cmd:
                         subprocess.run('git clone https://github.com/tomnomnom/gf.git', shell=True, check=True)
-                        subprocess.run(f'cd gf && go build && cp gf {os.path.join(self.go_path, "bin")}', shell=True, check=True)
-                        
-                        # Create ~/.gf directory if it doesn't exist
-                        gf_dir = os.path.expanduser('~/.gf')
-                        os.makedirs(gf_dir, exist_ok=True)
-                        
-                        # Copy pattern files
-                        subprocess.run(f'cp -r gf/examples/* {gf_dir}/', shell=True, check=True)
-                        console.print(f"[green]✓[/green] {alat} berhasil dipasang")
-                        return True
-                    except Exception as e:
-                        console.print(f"[red]Error saat menginstal Gf: {str(e)}[/red]")
-                        return False
-
-                # Pengecekan file requirements.txt sebelum pip install
-                if 'pip install -r requirements.txt' in cmd:
-                    try:
-                        # Extract directory from command
-                        req_dir = cmd.split('cd ')[-1].split(' &&')[0].strip() if 'cd ' in cmd else '.'
-                        req_path = os.path.join(req_dir, 'requirements.txt')
-                        
-                        if not os.path.exists(req_path):
-                            console.print(f"[yellow]Peringatan: File requirements.txt tidak ditemukan di {req_path} untuk {alat}, melewati langkah ini.[/yellow]")
-                            continue
-                    except Exception:
-                        console.print(f"[yellow]Peringatan: Gagal memeriksa file requirements.txt untuk {alat}.[/yellow]")
+                        subprocess.run('cd gf && go build && mv gf ~/go/bin/', shell=True, check=True)
+                        if not os.path.exists('~/.gf'):
+                            os.makedirs('~/.gf', exist_ok=True)
+                        subprocess.run('cp -r gf/examples/* ~/.gf/', shell=True, check=True)
+                        continue
 
                 with console.status(f"[bold cyan]Menginstall {alat}..."):
-                    try:
-                        result = subprocess.run(
-                            cmd,
-                            shell=True,
-                            check=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            text=True
-                        )
-                    except subprocess.CalledProcessError as e:
-                        console.print(f"[red]Error saat menjalankan: {cmd}\nDetail: {e.stderr or e.stdout or str(e)}[/red]")
-                        if 'permission denied' in str(e.stderr).lower():
-                            console.print("[yellow]Hint: Coba jalankan dengan sudo atau dengan hak administrator[/yellow]")
-                        raise
+                    result = subprocess.run(
+                        cmd,
+                        shell=True,
+                        check=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
 
-            try:
-                os.chdir(current_dir)
-            except Exception as e:
-                console.print(f"[yellow]Peringatan: Gagal kembali ke direktori awal: {str(e)}[/yellow]")
-                
+            os.chdir(current_dir)  # Kembali ke direktori awal
             console.print(f"[green]✓[/green] {alat} berhasil dipasang")
             return True
         except subprocess.CalledProcessError as e:
@@ -173,7 +130,7 @@ class InstallerAlatKeamanan:
                 Panel.fit(
                     f"Instalasi gagal untuk {alat}\n"
                     f"Perintah: {perintah}\n"
-                    f"Kesalahan: {e.stderr[-1000:] if hasattr(e, 'stderr') and e.stderr else str(e)}",
+                    f"Kesalahan: {e.stderr[-1000:]}",
                     title="[bold red]Kesalahan Instalasi[/bold red]",
                     border_style="red"
                 )
@@ -188,25 +145,8 @@ class InstallerAlatKeamanan:
             console.print("[bold red]Selesaikan dependensi sebelum melanjutkan.[/bold red]")
             return
 
-        if alat_terpilih:
-            # Process lowercase tool names and map to original case
-            normalized_tools = []
-            for tool_name in alat_terpilih:
-                lower_name = tool_name.lower()
-                if lower_name in self.daftar_alat_lowercase:
-                    # Get original case version
-                    normalized_tools.append(self.daftar_alat_lowercase[lower_name])
-                else:
-                    console.print(f"[yellow]Peringatan: Alat '{tool_name}' tidak ditemukan dalam daftar.[/yellow]")
-            
-            alat_untuk_dipasang = normalized_tools
-        else:
-            alat_untuk_dipasang = list(self.daftar_alat.keys())
+        alat_untuk_dipasang = alat_terpilih or list(self.daftar_alat.keys())
         
-        if not alat_untuk_dipasang:
-            console.print("[bold red]Tidak ada alat valid untuk diinstal.[/bold red]")
-            return
-            
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -217,6 +157,11 @@ class InstallerAlatKeamanan:
             task = progress.add_task("Memasang alat", total=len(alat_untuk_dipasang))
 
             for alat in alat_untuk_dipasang:
+                if alat not in self.daftar_alat:
+                    console.print(f"[yellow]Peringatan: Alat {alat} tidak ditemukan dalam daftar.[/yellow]")
+                    progress.update(task, advance=1)
+                    continue
+
                 console.print(f"[bold cyan][INFO][/bold cyan] Memulai instalasi {alat}")
                 berhasil = self.jalankan_perintah(self.daftar_alat[alat], alat)
                 
@@ -250,27 +195,14 @@ def tampilkan_bantuan():
         "[bold white]Pilihan:[/bold white]\n"
         "  [cyan]Tanpa argumen[/cyan]: Memasang semua alat\n"
         "  [cyan]Dengan nama alat[/cyan]: Memasang alat spesifik\n"
-        "  [cyan]-h/--help[/cyan]: Menampilkan halaman bantuan ini\n"
-        "  [cyan]-u/--update[/cyan]: Memperbarui alat yang sudah terinstal\n"
-        "  [cyan]-l/--list[/cyan]: Menampilkan daftar semua alat yang tersedia\n\n"
+        "  [cyan]-h/--help[/cyan]: Menampilkan halaman bantuan ini\n\n"
         "[bold white]Contoh:[/bold white]\n"
         "  python installer_alat.py                 # Pasang semua alat\n"
         "  python installer_alat.py amass subfinder # Pasang amass dan subfinder\n"
-        "  python installer_alat.py --help          # Tampilkan bantuan\n"
-        "  python installer_alat.py --list          # Tampilkan daftar alat\n"
-        "  python installer_alat.py --update        # Perbarui alat terinstal",
+        "  python installer_alat.py --help          # Tampilkan bantuan",
         title="[bold green]Bantuan[/bold green]",
         border_style="blue"
     ))
-
-def tampilkan_daftar_alat(daftar_alat):
-    tabel = Table(title="Daftar Alat Tersedia")
-    tabel.add_column("Nama Alat", style="cyan")
-    
-    for alat in sorted(daftar_alat.keys()):
-        tabel.add_row(alat)
-    
-    console.print(tabel)
 
 def main():
     daftar_alat = {
@@ -294,7 +226,7 @@ def main():
         "Freq": "git clone https://github.com/takshal/freq.git && cd freq && pip install .",
         "Gargs": "go install -v github.com/brentp/gargs@latest",
         "Gau": "go install -v github.com/lc/gau@latest",
-        "Ghauri": "git clone https://github.com/r0oth3x49/ghauri.git && cd ghauri && python3 -m pip install --upgrade -r requirements.txt && python3 -m pip install -e .",
+        "Ghauri": "git clone https://github.com/r0oth3x49/ghauri.git ; cd ghauri ; python3 -m pip install --upgrade -r requirements.txt && python3 -m pip install -e .",
         "Gf": "go install -v github.com/tomnomnom/gf@latest",  # Ditangani khusus
         "Gxss": "go install github.com/KathanP19/Gxss@latest",
         "Github-Search": "git clone https://github.com/gwen001/github-search.git && cd github-search && pip install -r requirements3.txt",
@@ -348,24 +280,15 @@ def main():
         "PIP package": "pip install -U sublist3r uro arjun colorama aiodns aiohttp selenium aiofiles aiolimiter alive_progress ratelimit pipx structlog requests uvloop setuptools asynciolimiter aiojarm tldextract playwright",
     }
 
-    if len(sys.argv) > 1:
-        if sys.argv[1] in ['-h', '--help']:
-            tampilkan_bantuan()
-            sys.exit(0)
-        elif sys.argv[1] in ['-l', '--list']:
-            tampilkan_daftar_alat(daftar_alat)
-            sys.exit(0)
-        elif sys.argv[1] in ['-u', '--update']:
-            console.print("[bold blue]Memperbarui semua alat yang sudah terinstal...[/bold blue]")
-            installer = InstallerAlatKeamanan(daftar_alat)
-            installer.install_alat(list(daftar_alat.keys()))  # Instal ulang semua
-            sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] in ['-h', '--help']:
+        tampilkan_bantuan()
+        return
 
     installer = InstallerAlatKeamanan(daftar_alat)
     
     try:
         if len(sys.argv) > 1:
-            alat_terpilih = sys.argv[1:]
+            alat_terpilih = [alat.lower() for alat in sys.argv[1:]]
             console.print(f"[bold blue]Memasang alat terpilih: {', '.join(alat_terpilih)}[/bold blue]")
             installer.install_alat(alat_terpilih)
         else:
