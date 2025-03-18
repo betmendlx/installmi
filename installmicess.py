@@ -22,7 +22,7 @@ class InstallerAlatKeamanan:
         self.alat_gagal: List[str] = []
         self.jenis_os = self._deteksi_os()
         self.go_path = self._setup_go_path()
-        self.hacks_cloned = False  # Untuk melacak apakah repositori hacks sudah di-clone
+        self.hacks_cloned = False 
 
     def _deteksi_os(self) -> str:
         nama_os = platform.system().lower()
@@ -60,7 +60,6 @@ class InstallerAlatKeamanan:
             )
             return False
 
-        # Tambahan untuk Naabu: Instal libpcap
         if self.jenis_os == 'linux':
             try:
                 subprocess.run("apt-get install -y libpcap-dev", shell=True, check=True)
@@ -79,29 +78,25 @@ class InstallerAlatKeamanan:
                 console.print(f"[yellow][MANUAL][/yellow] Silakan kunjungi: {perintah.split('open ')[1]}")
                 return True
 
-            # Pisahkan perintah jika ada multiple commands (&&)
             commands = perintah.split('&&')
-            current_dir = os.getcwd()  # Simpan direktori saat ini
+            current_dir = os.getcwd()  
             for cmd in commands:
                 cmd = cmd.strip()
                 if not cmd:
                     continue
 
-                # Tangani cloning repositori hacks sekali saja
                 if 'git clone https://github.com/tomnomnom/hacks.git' in cmd and not self.hacks_cloned:
                     if os.path.exists('hacks'):
-                        shutil.rmtree('hacks')  # Hapus jika sudah ada
+                        shutil.rmtree('hacks') 
                     subprocess.run('git clone https://github.com/tomnomnom/hacks.git', shell=True, check=True)
                     self.hacks_cloned = True
                 elif 'git clone https://github.com/tomnomnom/hacks.git' in cmd:
-                    continue  # Skip cloning jika sudah dilakukan
+                    continue  
 
-                # Tambahan untuk Go module
                 if 'go build' in cmd and alat in ['Cariddi', 'Unew', 'Urldedupe', 'x8', 'xray']:
                     module_dir = cmd.split('&&')[-1].split('mv')[0].split('cd')[-1].strip()
                     subprocess.run(f"cd {module_dir} && go mod init {alat.lower()} && go mod tidy", shell=True, check=True)
 
-                # Tangani GF secara khusus
                 if alat == 'Gf':
                     if 'go install' in cmd:
                         subprocess.run('git clone https://github.com/tomnomnom/gf.git', shell=True, check=True)
@@ -121,7 +116,7 @@ class InstallerAlatKeamanan:
                         text=True
                     )
 
-            os.chdir(current_dir)  # Kembali ke direktori awal
+            os.chdir(current_dir)  
             console.print(f"[green]✓[/green] {alat} berhasil dipasang")
             return True
         except subprocess.CalledProcessError as e:
