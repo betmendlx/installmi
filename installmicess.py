@@ -274,7 +274,7 @@ def tampilkan_daftar_alat(daftar_alat):
 
 def main():
     daftar_alat = {
-        "Amass": "go install -v github.com/OWASP/Amass/v3/...@latest",
+        "Amass": "go install -v github.com/owasp-amass/amass/v4/...@master",
         "Anew": "go install -v github.com/tomnomnom/anew@latest",
         "Anti-burl": "git clone https://github.com/tomnomnom/hacks.git && mkdir -p ~/go/bin/ && cp hacks/anti-burl/anti-burl ~/go/bin/",
         "Assetfinder": "go install -v github.com/tomnomnom/assetfinder@latest",
@@ -294,6 +294,7 @@ def main():
         "Freq": "git clone https://github.com/takshal/freq.git && cd freq && pip install .",
         "Gargs": "go install -v github.com/brentp/gargs@latest",
         "Gau": "go install -v github.com/lc/gau@latest",
+        "Ghauri": "git clone https://github.com/r0oth3x49/ghauri.git ; cd ghauri ; python3 -m pip install --upgrade -r requirements.txt && python3 -m pip install -e .",
         "Gf": "go install -v github.com/tomnomnom/gf@latest",  # Ditangani khusus
         "Gxss": "go install github.com/KathanP19/Gxss@latest",
         "Github-Search": "git clone https://github.com/gwen001/github-search.git && cd github-search && pip install -r requirements3.txt",
