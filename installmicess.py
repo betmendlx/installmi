@@ -294,7 +294,7 @@ def main():
         "Gargs": "go install -v github.com/brentp/gargs@latest",
         "Gau": "go install -v github.com/lc/gau@latest",
         "Gf": "go install -v github.com/tomnomnom/gf@latest",  # Ditangani khusus
-        "Gxss": "go install -v github.com/rverton/gxss@latest",
+        "Gxss": "go install github.com/KathanP19/Gxss@latest",
         "Github-Search": "git clone https://github.com/gwen001/github-search.git && cd github-search && pip install -r requirements3.txt",
         "Gospider": "go install -v github.com/jaeles-project/gospider@latest",
         "Gowitness": "go install -v github.com/sensepost/gowitness@latest",
@@ -340,7 +340,7 @@ def main():
         "XSStrike": "git clone https://github.com/s0md3v/XSStrike.git && cd XSStrike && pip install -r requirements.txt",
         "Page-fetch": "go install -v github.com/detectify/page-fetch@latest",
         "HEDnsExtractor": "go install -v github.com/HuntDownProject/hednsextractor/cmd/hednsextractor@latest",
-        "PIP package": "pip install -U sublist3r uro arjun colorama aiodns aiohttp selenium aiofiles sqlite3 aiolimiter alive_progress ratelimit pipx structlog requests uvloop setuptools asynciolimiter aiojarm tldextract playwright",
+        "PIP package": "pip install -U sublist3r uro arjun colorama aiodns aiohttp selenium aiofiles aiolimiter alive_progress ratelimit pipx structlog requests uvloop setuptools asynciolimiter aiojarm tldextract playwright",
     }
 
     if len(sys.argv) > 1:
