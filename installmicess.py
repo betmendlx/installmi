@@ -281,7 +281,7 @@ def main():
         elif sys.argv[1] in ['-u', '--update']:
             console.print("[bold blue]Memperbarui semua alat yang sudah terinstal...[/bold blue]")
             installer = InstallerAlatKeamanan(daftar_alat)
-            installer.install_alat(list(daftar_alat.keys()))  # Instal ulang semua
+            installer.install_alat(list(daftar_alat.keys()))
             sys.exit(0)
 
     installer = InstallerAlatKeamanan(daftar_alat)
